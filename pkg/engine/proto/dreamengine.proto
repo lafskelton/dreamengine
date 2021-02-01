@@ -1,0 +1,123 @@
+syntax = "proto3";
+package dreamdatastream;
+// #### CONTROLAPI GRPC DEFINITIONS
+option go_package = "github.com/lafskelton/compute_layer/protos/dreamdatastream";
+
+
+// ### Service
+service dreamdatastream {
+    //The instance calls the API to make the connection! 
+    rpc data(stream ClientToServer) returns (stream ServerToClient){}
+}
+
+// ### Operational messages
+
+//Instance->API
+message HandshakeManifest{
+    //The client issues a handshake to the server on connection which starts a session
+    string clientSoftware = 1;
+}
+//API<-Instance
+message HandshakeReceipt{ 
+    //ID this instance was added to the ComputeIndex with
+    string instanceID = 1; 
+    string clientID = 2; //This identifies this session
+    bool   ok = 3; //Server condition
+    bool   ready = 4; //Server accepting work
+    string error = 5; //if !ok, here is error 
+    //
+}
+
+//The client may want to know what the health status of this server is...
+
+message HealthCheckManifest{
+}
+// ### HealthCheck
+message HealthCheckReceipt {
+    bool ok = 2; //Top level declaration, enough to continue connection, but not work
+    bool ready = 3; //Declaration the top level is ready for work
+    repeated ServerError errors = 4;
+}
+
+
+// ########### Misc messages
+
+message ServerError {
+    string error = 1; 
+}
+
+
+// ########### Task messages
+
+message TaskManifest { 
+    oneof Data {
+        LoadModelManifest load = 2; 
+        ExecuteDataManifest exec = 3; 
+    }
+}
+message TaskReceipt {
+    oneof Data{
+        LoadModelReceipt load = 2; 
+        ExecuteDataReceipt exec = 3; 
+    }
+}
+
+message LoadModelManifest {
+    bytes BinaryModelDefinition = 2;
+}
+message LoadModelReceipt { 
+    string ModelID = 2; //The modelID required to make task requests
+    bool ok = 3;
+    string error = 4;
+}
+
+message ExecuteDataManifest{
+    string ModelID = 2;
+    bytes inputVector = 3; 
+    bool highPriority = 4; 
+}
+message ExecuteDataReceipt{
+    string ModelID = 2; 
+    bytes outputVector = 3;
+    bool ok = 4; 
+    string error = 5;
+}
+
+
+
+
+/// ############ STREAM MESSAGES
+
+//Top level message
+//
+//API -> Instance Logic
+message ServerToClient{
+    string msgID = 1; //
+    bool reply = 2; 
+    oneof data { 
+        //Ops
+        HandshakeReceipt handshake = 3;
+        HealthCheckReceipt healthcheck = 4; // <>
+        TaskReceipt task = 5;
+        //Misc
+        string error = 6;
+        //Tasks
+    }
+}
+//
+//Instance -> API Logic
+message ClientToServer{
+    string msgID = 1; //For keeping track of chain msgs on the network
+    bool reply = 2; //Tells the receiver that it needs to consider this a chain message
+    oneof data {
+        //Ops
+        HandshakeManifest handshake = 3;  
+        HealthCheckManifest healthcheck = 4; // <>
+        TaskManifest task = 5;
+        //Misc
+        string error = 6;
+        //Tasks
+
+    }
+}
+
