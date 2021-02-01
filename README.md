@@ -17,7 +17,6 @@
   - distribution & redundancy
   - external library service
   - model training
-  - convolutional & pooling layers
   - optimizers
   - CUDA warp matrix capability (enable use of tensor cores)
 
