@@ -1,6 +1,6 @@
 # dreamengine
 
-  ### Abstract (*in-progress*)
+  ### Abstract (*in-progress, PR welcome*)
   ---
 A cloud AI compute engine for nvidia GPUs via cuDNN
 
